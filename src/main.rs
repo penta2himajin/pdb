@@ -3,7 +3,8 @@ extern crate nix;
 use std::io;
 use std::ptr::null_mut;
 use nix::unistd::Pid;
-use nix::sys::ptrace::{ptrace, Request};
+use nix::sys::signal::{kill, Signal};
+use nix::sys::ptrace::{attach};
 
 fn main() {
     println!("pdb written by penta2himajin.");
@@ -18,7 +19,6 @@ fn read<T: std::str::FromStr>() -> T {
 }
 
 fn proc_trace(pid: Pid){
-    unsafe{
-        ptrace(Request::PTRACE_ATTACH, pid, null_mut(), null_mut());
-    }
+    attach(pid);
+    kill(pid, Signal::SIGSTOP);
 }
