@@ -5,3 +5,5 @@ authors = ["Kenya Nara <penta2himajin@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+libc = "0.2"
+nix = "0.13.0"
