@@ -1,7 +1,6 @@
 extern crate nix;
 
 use std::io;
-use std::ptr::null_mut;
 use nix::unistd::Pid;
 use nix::sys::signal::{kill, Signal};
 use nix::sys::ptrace::{attach};
