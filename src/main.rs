@@ -9,13 +9,10 @@ use nix::sys::ptrace::{attach};
 
 fn main() {
     println!("pdb written by penta2himajin.");
-    let pid = read();
-    let addr = get_mem_addr(pid);
-    println!("{}", addr);
-    proc_trace(pid);
+    proc_trace(pid_read());
 }
 
-fn read() -> Pid {
+fn pid_read() -> Pid {
     let mut input = String::new();
     io::stdin().read_line(&mut input)
         .expect("Couldn't receive correct input");
