@@ -1,28 +1,47 @@
 extern crate nix;
 
 use std::io;
-use std::io::{BufReader, Read};
+use std::io::{stdin, stdout, BufReader, Read, Write};
 use std::fs::File;
+use std::ptr::null_mut;
+use std::ffi::c_void;
+use std::mem::size_of;
 use nix::unistd::Pid;
 use nix::sys::signal::{kill, Signal};
-use nix::sys::ptrace::{attach};
+use nix::sys::ptrace::{ptrace, Request};
 
 fn main() {
     println!("pdb written by penta2himajin.");
-    proc_trace(pid_read());
+    print!("Process ID: ");
+    stdout().flush();
+    let pid = Pid::from_raw(read::<i32>());
+    proc_stop(pid);
+    println!("{}", get_mem_addr(pid));
+    print!("Process Address: ");
+    stdout().flush();
+    println!("{}", get_proc_data(pid, read::<usize>() as *mut c_void));
 }
 
-fn pid_read() -> Pid {
+fn read<T: std::str::FromStr>() -> T {
     let mut input = String::new();
-    io::stdin().read_line(&mut input)
+    stdin().read_line(&mut input)
         .expect("Couldn't receive correct input");
-    return Pid::from_raw(input.trim().parse().ok().unwrap());
+    return input.trim().parse().ok()
+        .expect("Couldn't unwrap input");
 }
 
-fn proc_trace(pid: Pid) {
-    attach(pid).expect(&format!("Couldn't attach process {}", pid));
+fn proc_stop(pid: Pid) {
     kill(pid, Signal::SIGSTOP)
-        .expect(&format!("Couldn't 'kill()' process {}", pid));
+        .expect(&format!("Couldn't exec 'kill(SIGSTOP)' process {}", pid));
+}
+
+fn get_proc_data(pid: Pid, addr: *mut c_void) -> String {
+    let mut data;
+    unsafe{
+        data = ptrace(Request::PTRACE_PEEKDATA, pid, addr, null_mut())
+            .expect(&format!("Couldn't exec 'ptrace(PEEKDATA)' process {}", pid));
+    }
+    return data.to_string();
 }
 
 fn get_mem_addr(pid: Pid) -> String {
