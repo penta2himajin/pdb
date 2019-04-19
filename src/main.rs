@@ -1,6 +1,6 @@
 extern crate nix;
 
-use std::usize;
+use std::{str, usize};
 use std::io::{stdin, stdout, BufReader, Read, Write};
 use std::fs::File;
 use nix::unistd::Pid;
@@ -17,17 +17,17 @@ fn main() {
     println!("pdb written by penta2himajin.");
     print_o!("Process ID: ");
     let pid = read_pid();
+    ptrace::attach(pid).unwrap();
     println!("{}", get_mem_addr(pid));
     print_o!("Process Address: ");
-    println!("{:?}", ptrace::read(pid, read_addr()));
+    println!("{}", ptrace::read(pid, read_addr()).unwrap());
+    ptrace::detach(pid).unwrap();
 }
 
-fn read<T: std::str::FromStr>() -> T {
+fn read<T: str::FromStr>() -> T {
     let mut input = String::new();
-    stdin().read_line(&mut input)
-        .expect("Couldn't receive correct input");
-    input.trim().parse().ok()
-        .expect("Couldn't unwrap input")
+    stdin().read_line(&mut input).unwrap();
+    input.trim().parse().ok().unwrap()
 }
 
 fn read_pid() -> Pid {
