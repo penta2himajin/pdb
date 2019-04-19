@@ -1,26 +1,42 @@
 extern crate nix;
 
-use std::{str, usize};
-use std::io::{stdin, stdout, BufReader, Read, Write};
+use std::{
+    str,
+    u64
+};
+use std::io::{
+    stdin,
+    stdout,
+    BufReader,
+    Read,
+    Write
+};
 use std::fs::File;
 use nix::unistd::Pid;
 use nix::sys::ptrace;
 
-macro_rules! print_o {
+macro_rules! print_ol {
     ($x:expr) => {
         print!("{}", $x);
         stdout().flush().unwrap();
     }
 }
 
+macro_rules! print_hex {
+    ($x:expr) => {
+        println!("{}", format!("{:x}", $x));
+    }
+}
+
 fn main() {
     println!("pdb written by penta2himajin.");
-    print_o!("Process ID: ");
+    print_ol!("Process ID: ");
     let pid = read_pid();
     ptrace::attach(pid).unwrap();
     println!("{}", get_mem_addr(pid));
-    print_o!("Process Address: ");
-    println!("{}", ptrace::read(pid, read_addr()).unwrap());
+    let regs = ptrace::getregs(pid).unwrap();
+    print_hex!(regs.rsp);
+    print_hex!(ptrace::read(pid, regs.rsp as ptrace::AddressType).unwrap());
     ptrace::detach(pid).unwrap();
 }
 
@@ -36,7 +52,7 @@ fn read_pid() -> Pid {
 
 fn read_addr() -> ptrace::AddressType {
     let addr = read::<String>();
-    usize::from_str_radix(
+    u64::from_str_radix(
         addr.trim_start_matches("0x"),
         16
     ).unwrap() as ptrace::AddressType
