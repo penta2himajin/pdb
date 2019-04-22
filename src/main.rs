@@ -2,18 +2,29 @@ extern crate nix;
 
 use std::{
     str,
-    u64
+    u64,
+    fs::File,
+    io::{
+        stdin,
+        stdout,
+        BufReader,
+        Read,
+        Write
+    }
 };
-use std::io::{
-    stdin,
-    stdout,
-    BufReader,
-    Read,
-    Write
+use nix::{
+    unistd::Pid,
+    sys::{
+        ptrace::{
+            attach,
+            detach,
+            read,
+            getregs,
+            AddressType
+        }
+    }
 };
-use std::fs::File;
-use nix::unistd::Pid;
-use nix::sys::ptrace;
+
 
 macro_rules! print_ol {
     ($x:expr) => {
@@ -28,34 +39,35 @@ macro_rules! print_hex {
     }
 }
 
+
 fn main() {
-    println!("pdb written by penta2himajin.");
+    println!("\n ***** pdb ***** \n");
     print_ol!("Process ID: ");
     let pid = read_pid();
-    ptrace::attach(pid).unwrap();
+    attach(pid).unwrap();
+    let regs = getregs(pid).unwrap();
     println!("{}", get_mem_addr(pid));
-    let regs = ptrace::getregs(pid).unwrap();
     print_hex!(regs.rsp);
-    print_hex!(ptrace::read(pid, regs.rsp as ptrace::AddressType).unwrap());
-    ptrace::detach(pid).unwrap();
+    print_hex!(read(pid, read_addr()).unwrap());
+    detach(pid).unwrap();
 }
 
-fn read<T: str::FromStr>() -> T {
+fn read_any<T: str::FromStr>() -> T {
     let mut input = String::new();
     stdin().read_line(&mut input).unwrap();
     input.trim().parse().ok().unwrap()
 }
 
 fn read_pid() -> Pid {
-    Pid::from_raw(read::<i32>())
+    Pid::from_raw(read_any::<i32>())
 }
 
-fn read_addr() -> ptrace::AddressType {
-    let addr = read::<String>();
+fn read_addr() -> AddressType {
+    let addr = read_any::<String>();
     u64::from_str_radix(
         addr.trim_start_matches("0x"),
         16
-    ).unwrap() as ptrace::AddressType
+    ).unwrap() as AddressType
 }
 
 fn get_mem_addr(pid: Pid) -> String {
