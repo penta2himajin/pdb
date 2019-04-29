@@ -43,34 +43,34 @@ macro_rules! print_hex {
 fn main() {
     println!("\n ***** pdb ***** \n");
     print_ol!("Process ID: ");
-    let pid = read_pid();
+    let pid = input_pid();
     attach(pid).unwrap();
     let regs = getregs(pid).unwrap();
-    println!("{}", get_mem_addr(pid));
-    print_hex!(regs.rsp);
-    print_hex!(read(pid, read_addr()).unwrap());
+    println!("{}", output_mem_addr(pid));
+    println!("{}", format!("RSP: {:x}\nRBP: {:x}", regs.rsp, regs.rbp));
+    print_hex!(read(pid, input_addr()).unwrap());
     detach(pid).unwrap();
 }
 
-fn read_any<T: str::FromStr>() -> T {
+fn input<T: str::FromStr>() -> T {
     let mut input = String::new();
     stdin().read_line(&mut input).unwrap();
     input.trim().parse().ok().unwrap()
 }
 
-fn read_pid() -> Pid {
-    Pid::from_raw(read_any::<i32>())
+fn input_pid() -> Pid {
+    Pid::from_raw(input::<i32>())
 }
 
-fn read_addr() -> AddressType {
-    let addr = read_any::<String>();
+fn input_addr() -> AddressType {
+    let addr = input::<String>();
     u64::from_str_radix(
         addr.trim_start_matches("0x"),
         16
     ).unwrap() as AddressType
 }
 
-fn get_mem_addr(pid: Pid) -> String {
+fn output_mem_addr(pid: Pid) -> String {
     let pid_str = pid.to_string();
     let mut buf_reader = BufReader::new(
         File::open(
